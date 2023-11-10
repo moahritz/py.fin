@@ -12,3 +12,6 @@ This is a repo for all my assignments for the Python 1 course, taught by Christi
  - I want a LaTeX file that reviews the work and outputs from the assignment
  - I want a pure Python file (HW1_MoritzJakob, but proper and sorted) with the whole assignment. The outputs generated here should feed the LaTeX file.
  - Maybe the two steps above will be morphed into a single Jupyter Notebook, but that will be determined later on. There is also the possibility of just using homework1.ipynb and inserting the code cells here. We'll see.
+
+
+REMEMBER: The name of the file that you upload should be named *Homework1_YourLastName_YourStudentID*.

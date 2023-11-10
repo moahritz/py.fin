@@ -12,7 +12,9 @@ class Order(object):
 
     def get_number(self):
         return self.ID
-    
+    def __del__(self):
+         Order.number -= 1
+         print("Order (ID: %s) deleted" %(self.ID))    
 
 class Ask(Order):
 
@@ -21,6 +23,7 @@ class Ask(Order):
             self.limit_price = limit_price
             self.size = size
             self.side = side
+
 
 class Bid(Order):
 
@@ -32,6 +35,9 @@ class Bid(Order):
 
 
 
+
+
+######### TEST AREA ########
 order1 = Ask(100.5)
 order2 = Ask(103)
 print(order2)
@@ -44,3 +50,12 @@ print(order3)
 Order.number
 
 print(order1)
+
+order5 = Ask(34)
+print(order5)
+Order.number
+del order5
+Order.number
+del order3
+Order.number
+print(order4)
