@@ -1,3 +1,33 @@
+class OrderBook(object):
+    def __init__(self):
+         self.asks = []
+         self.bids = []
+         #self.tick = 0.1
+    def add_order(self, order):
+        if order.side == 'sell':
+            self.asks.append(order)
+        elif order.side == 'buy':
+            self.bids.append(order)
+        # You might want to sort the orders after adding them
+        # LimitOrderBook.asks.sort(key=lambda x: x.limit_price)
+        # LimitOrderBook.bids.sort(key=lambda x: x.limit_price, reverse=True)
+
+    def display(self):
+         print("Bids: ")
+         for bid in self.bids:
+           print(bid)
+         print("Asks: ")
+         for ask in self.asks:
+              print(ask)
+        
+order_book = OrderBook()
+
+
+
+
+
+
+
 class Order(object):
     number = 0
 
@@ -23,7 +53,7 @@ class Ask(Order):
             self.limit_price = limit_price
             self.size = size
             self.side = side
-
+            order_book.add_order(self)
 
 class Bid(Order):
 
@@ -32,6 +62,7 @@ class Bid(Order):
             self.limit_price = limit_price
             self.size = size
             self.side = side
+            order_book.add_order(self)
 
 
 
@@ -59,3 +90,18 @@ Order.number
 del order3
 Order.number
 print(order4)
+
+
+ASKS = [order1, order2, order5]
+ASKS.sort(key=lambda x: x.limit_price)
+ASKS[0].limit_price
+
+BIDS = [order3, order4]
+BIDS.sort(key=lambda x: x.limit_price, reverse=True)
+BIDS[0].limit_price
+
+
+######################### NEW STUFF ############################
+
+
+order_book.display()
