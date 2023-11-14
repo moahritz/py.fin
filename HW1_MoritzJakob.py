@@ -1,5 +1,6 @@
 class OrderBook(object):
-    def __init__(self):
+    def __init__(self, tick_size):
+        self.tick_size = tick_size
         self.asks = []
         self.bids = []
         self.max_bid =  None
@@ -33,7 +34,7 @@ class OrderBook(object):
                 trade_price = min(self.min_ask, new_order.limit_price)
                 trade_size = new_order.size
                 trade = Trade(new_order.ID, order.ID, trade_price, trade_size)
-                print("Trade: %s" % trade)
+                print("Trade %s" % trade)
                 orders.remove(order)
                 del new_order
                 break
@@ -41,7 +42,7 @@ class OrderBook(object):
                 trade_price = min(self.min_ask, new_order.limit_price)
                 trade_size = new_order.size
                 trade = Trade(new_order.ID, order.ID, trade_price, trade_size)
-                print("Trade: %s" % trade)
+                print("Trade %s" % trade)
                 orders.remove(order)
                 del new_order
                 break
@@ -62,17 +63,18 @@ class OrderBook(object):
         for ask in self.asks:
             print(ask)
         
-order_book = OrderBook()
 
 class Trade(object):
+    number_of_trades = 0
     def __init__(self, buy_order_id, sell_order_id, price, size):
         self.buy_order_id = buy_order_id
         self.sell_order_id = sell_order_id
         self.price = price
         self.size = size
+        Trade.number_of_trades += 1
 
     def __str__(self):
-        return "Buy Order ID: %s, Sell Order ID: %s, Price: %s, Size: %s" % (self.buy_order_id, self.sell_order_id, self.price, self.size)
+        return "(%s) : Buy Order ID: %s, Sell Order ID: %s, Price: %s, Size: %s" % (Trade.number_of_trades, self.buy_order_id, self.sell_order_id, self.price, self.size)
     
 
 class Order(object):
@@ -82,14 +84,14 @@ class Order(object):
         self.limit_price = limit_price
         self.ID = Order.number + 1
         Order.number += 1
-        print('Order (ID: %s) created' %(self.ID))
+        #print('Order (ID: %s) created' %(self.ID))
     
     def __str__(self):
         return " Limit Price: %s, Side: %s, Order ID: %s" %(self.limit_price, self.side, self.ID)
 
     def __del__(self):
-        print('Order (ID: %s) deleted' %(self.ID))
-
+        #print('Order (ID: %s) deleted' %(self.ID))
+        pass
 
 class Ask(Order):
 
@@ -109,6 +111,10 @@ class Bid(Order):
             self.side = side
             order_book.add_order(self)
 
+
+
+
+order_book =OrderBook(0.0001)
 order_book.display()
 order1 = Ask(100.5)
 order_book.display()
@@ -128,34 +134,74 @@ order8 = Bid(105)
 order_book.display()
 order9 = Bid(25)
 order_book.display()
+Trade.number_of_trades
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ##### 2. Generating random numbers and simulating order flow
+import numpy as np
+
+rng = np.random.default_rng(123)
+
+A = rng.standard_normal(100)
+B = rng.uniform(0, 1, 100)
+C = rng.choice([-1,1], 100)
+D = rng.choice(['EX1', 'EX2'], 100000)
+
+def mk_order(fv, pv, k, Order_Book):
+    '''
+    Create individual orders based on the fair value, the private value, the constant profit, and the tick size.
+
+    Parameters:
+    - fv: fair value
+    - pv: private value
+    - k: profit constant
+    - Order_Book: the order book to which the order will be added, and that holds the tick_size as an argument
+    '''
+
+    if pv >= 0:
+        #This is a buy order
+        limit_price = round((fv + pv - k) /Order_Book.tick_size) * Order_Book.tick_size 
+        order = Bid(limit_price)
+    else:
+        #This is a sell order
+        limit_price = round((fv + pv + k) /Order_Book.tick_size) * Order_Book.tick_size
+        order = Ask(limit_price)
+
+    return order
 
 
 
 
+###### 3. Starting the Simulations ######
+fair_value = 100
+k = .1
+tick1 = .01
+q = 0.01
 
 
+EX1 = OrderBook(tick1)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+for pv, prchange, dirchange in zip(A, B, C):
+    if prchange < q:
+        fair_value += dirchange
+    else:
+        fair_value += dirchange * 0
+    order = mk_order(fair_value, pv, k, EX1) 
 
