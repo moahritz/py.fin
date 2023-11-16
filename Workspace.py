@@ -8,7 +8,7 @@ class OrderBook(object):
 
     def add_order(self, order):
         if order.side == 'sell':
-            if self.max_bid is None or order.limit_price > self.max_bid:
+            if (self.max_bid is None) or (order.limit_price > self.max_bid):
                 if self.min_ask is None or order.limit_price < self.min_ask:
                     self.min_ask = order.limit_price
                     self.asks.append(order)
@@ -18,7 +18,13 @@ class OrderBook(object):
                 self.match_order(order, self.bids)
   
         elif order.side == 'buy':
-            if self.min_ask is None or order.limit_price < self.min_ask:
+            if self.min_ask is None:  
+                if self.max_bid is None or order.limit_price > self.max_bid:
+                    self.max_bid = order.limit_price
+                    self.bids.append(order)
+                else:
+                    self.bids.append(order)
+            elif order.limit_price < self.min_ask:
                 if self.max_bid is None or order.limit_price > self.max_bid:
                     self.max_bid = order.limit_price
                     self.bids.append(order)
@@ -48,7 +54,8 @@ class OrderBook(object):
                 break
         # Update max_bid and min_ask
         self.max_bid = max([bid.limit_price for bid in self.bids]) if self.bids else None
-        self.min_ask = min([ask.limit_price for ask in self.asks]) if self.asks else None      
+        self.min_ask = min([ask.limit_price for ask in self.asks]) if self.asks else None
+        
 
         
     def display(self):
@@ -113,7 +120,7 @@ class Bid(Order):
 
 
 
-order_book =OrderBook(0.01)
+order_book =OrderBook(0.0001)
 order_book.display()
 order1 = Ask(100.5)
 order_book.display()
@@ -122,17 +129,45 @@ order_book.display()
 order3 = Bid(102.5)
 order_book.display()
 order4 = Bid(101)
+order_book.display()
+order5 = Ask(34)
+order_book.display()
+order6 = Bid(104)
+order_book.display()
+order7 = Ask(100)
+order_book.display()
+order8 = Bid(105)
+order_book.display()
+order9 = Bid(25)
+order_book.display()
+Trade.number_of_trades
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 ##### 2. Generating random numbers and simulating order flow
 import numpy as np
-rng = np.random.default_rng(1234)
 
-A = rng.standard_normal(1000)
-A1 = 0.1 * A
-B = rng.uniform(0, 1, 1000)
-C = rng.choice([-1,1], 1000)
+rng = np.random.default_rng(123)
+
+A = rng.standard_normal(100)
+B = rng.uniform(0, 1, 100)
+C = rng.choice([-1,1], 100)
 D = rng.choice(['EX1', 'EX2'], 100000)
 
 def mk_order(fv, pv, k, Order_Book):
@@ -144,51 +179,59 @@ def mk_order(fv, pv, k, Order_Book):
     - pv: private value
     - k: profit constant
     - Order_Book: the order book to which the order will be added, and that holds the tick_size as an argument
-    - n: standard deviation of private value
     '''
 
-    if pv > 0:
+    if pv >= 0:
         #This is a buy order
-        limit_price = ((fv + pv - k) /Order_Book.tick_size)//1 * Order_Book.tick_size 
+        limit_price = round((fv + pv - k) /Order_Book.tick_size) * Order_Book.tick_size 
         order = Bid(limit_price)
     else:
         #This is a sell order
-        limit_price = ((fv + pv + k) /Order_Book.tick_size)//1 * Order_Book.tick_size
+        limit_price = round((fv + pv + k) /Order_Book.tick_size) * Order_Book.tick_size
         order = Ask(limit_price)
 
     return order
+
+
 
 
 ###### 3. Starting the Simulations ######
 fair_value = 100
 k = .1
 tick1 = .01
-q = 0.01
+q = 0.3
 
-order_book.tick_size = tick1
+
+EX1 = OrderBook(tick1)
+
+order1 = Bid(((100 + A[6] - 0.1)/EX1.tick_size)//1 * EX1.tick_size)
+order2 = Ask(((100 + A[6] - 0.1)/EX1.tick_size)//1 * EX1.tick_size)
+order3 = Ask(23.34)
+
+
+order_book.display()
+order_book.display()
+
 
 for pv, prchange, dirchange in zip(A, B, C):
     if prchange < q:
         fair_value += dirchange
     else:
         fair_value += dirchange * 0
-    order = mk_order(fair_value, pv, k, order_book) 
-
-order_book.display()
+    order = mk_order(fair_value, pv, k, EX1) 
 
 
 
-def F(b, a = -1):
-    if b <= 1:
-        return (1/8 * b**2 + 2*b/4 -(1/8 * a**2 + 2*a/4))
-    else:
-        return 1
+for pv, prchange, dirchange in zip(A,B,C):
+    if prchange < q:
+        fair_value += dirchange
+    order = mk_order(fair_value, pv, k, EX1)
+    test.append(order)
 
-1 - F(0.25)
 
-F(2)
+test =[]
+for pv in A:
+    limit_price = ((fair_value + pv - k) /EX1.tick_size)//1 * EX1.tick_size
+    test.append(limit_price)
 
-F(0)
-a = -1
--(1/8 * a**2 + 2*a/4)
-
+test
