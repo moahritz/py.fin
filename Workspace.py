@@ -234,3 +234,5 @@ for pv, prchange, dirchange in zip(A, B, C):
     else:
         fair_value += dirchange * 0
     order = mk_order(fair_value, pv, k, exchange1, exchange2) 
+
+exchange1.display()
