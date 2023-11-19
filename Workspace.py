@@ -1,26 +1,7 @@
 
-#1. Order Matching Logic Improvement:
-#Modify the match_order function to sort the orders based on price and time before trying to match.
-#Add a timestamp attribute to orders to support this.
-#2. Price Comparison Logic:
-#Implement methods to retrieve the best bid and ask prices from the OrderBook.
-#3. Error Handling:
-#Instead of using del new_order, we will handle the order size reduction within the match_order function.
-#4. Trade Execution Side Effects:
-#Adjust the sizes of the orders in the match_order function when a trade occurs.
-#5. Encapsulation:
-#Add methods for order cancellation and modification.
-#6. Data Structures:
-#For now, we will keep the list data structure for simplicity. If performance becomes an issue, we could consider using heaps.
-#7. Robust Trade Class:
-#Include additional attributes such as timestamps and trade IDs in the Trade class.
-#8. Testing and Validation:
-#Outline a simple testing procedure to validate the behavior of the OrderBook.
-
-
-
 from datetime import datetime
 import bisect
+
 class Order(object):
     number = 0
 
@@ -65,8 +46,14 @@ class OrderBook(object):
         self.tick_size = tick_size
         self.asks = []
         self.bids = []
-        self.max_bid =  None  #DELETE LATER
-        self.min_ask =  None  #DELETE LATER
+
+        self.price_changes = []
+        self.total_volume = 0
+        self.spreads = []       #list of all spreads from Trades in OrderBook To calculate avg. spread
+        self.hist_spreads = []  #list of the historical average spreads
+        self.hist_std = []
+        self.trade_prices = []
+
 
     def add_order(self, order):
         timestamp = datetime.now()   #when do we ever need this?
@@ -100,8 +87,14 @@ class OrderBook(object):
     def match_order(self, new_order, orders):
         for index, order in enumerate(orders):
             if self.is_match(new_order, order):
-                trade = Trade(new_order.ID, order.ID, order.limit_price, 1)
+
+                bid_price = new_order.limit_price if new_order.side == 'buy' else order.limit_price
+                ask_price = new_order.limit_price if new_order.side == 'sell' else order.limit_price
+
+                trade = Trade(new_order.ID if new_order.side == 'buy' else order.ID, order.ID if new_order.side =='buy' else new_order.ID, bid_price, ask_price, order.limit_price, 1)
                 print("Trade executed: ", trade)
+
+                self.update_trade_metrics(trade)
 
                 orders.pop(index)
 
@@ -111,10 +104,33 @@ class OrderBook(object):
                     self.bids = [bid for bid in self.bids if bid.ID != new_order.ID]
 
                 break
+    
+    def update_trade_metrics(self, trade):
+        self.total_volume += trade.size
+        self.spreads.append(trade.bid_price - trade.ask_price)
 
-        # Update max_bid and min_ask
-        self.max_bid = max([bid.limit_price for bid in self.bids]) if self.bids else None  #DELETE LATER
-        self.min_ask = min([ask.limit_price for ask in self.asks]) if self.asks else None  #DELETE LATER
+        average_spread = self.get_average_spread()
+        self.hist_spreads.append(average_spread)
+
+        if self.trade_prices:
+            percentage_change = (trade.price / self.trade_prices[-1]) - 1
+            self.price_changes.append(percentage_change)
+
+        std_price_change = self.get_std_dp()
+        self.hist_std.append(std_price_change)
+
+        self.trade_prices.append(trade.price)
+    
+    def get_average_spread(self):
+        if not self.spreads:
+            return 0
+        return sum(self.spreads) / len(self.spreads)
+    
+    def get_std_dp(self):
+        if len(self.price_changes) < 2:
+            return 0
+        return np.std(self.price_changes)
+    
 
     def get_best_ask(self):
         if not self.asks:
@@ -146,21 +162,22 @@ class OrderBook(object):
 class Trade(object):
     number_of_trades = 0
 
-    def __init__(self, buy_order_id, sell_order_id, price, size):
+    def __init__(self, buy_order_id, sell_order_id, bid_price, ask_price, price, size):
         self.buy_order_id = buy_order_id
         self.sell_order_id = sell_order_id
+        self.bid_price = bid_price
+        self.ask_price = ask_price
         self.price = price
         self.size = size
         Trade.number_of_trades += 1
 
     def __str__(self):
-        return "(%s) : Buy Order ID: %s, Sell Order ID: %s, Price: %s, Size: %s" % (Trade.number_of_trades, self.buy_order_id, self.sell_order_id, self.price, self.size)
+        return "(%s) : Buy Order ID: %s, Sell Order ID: %s, Price: %s/%s -> %s, Size: %s" % (Trade.number_of_trades, self.buy_order_id, self.sell_order_id, self.bid_price, self.ask_price, self.price, self.size)
     
 
 
 def mk_order(fv, pv, k, exchange1, exchange2):
-    '''Create individual orders based on the fair value, the private value, and the constant profit.
-    Parameters:
+    '''individual orders based on params:
     - fv: fair value
     - pv: private value
     - k: profit constant
@@ -203,25 +220,24 @@ def mk_order(fv, pv, k, exchange1, exchange2):
 
 
 #Set up for simulations
-
+tick1 = 0.01
+tick2 = 0.01
 exchange1 = OrderBook(tick1)
 exchange2 = OrderBook(tick2)
 
 import numpy as np
 rng = np.random.default_rng(1234)
 
-A = rng.standard_normal(10000)
+A = rng.standard_normal(100)
 A1 = 0.1 * A
-B = rng.uniform(0, 1, 10000)
-C = rng.choice([-1,1], 10000)
+B = rng.uniform(0, 1, 100)
+C = rng.choice([-1,1], 100)
 
 fair_value = 100
 k = .1
-tick1 = .01
 q = 0.01
 
-tick1 = 0.01
-tick2 = 0.01
+
 
 
 
@@ -235,4 +251,13 @@ for pv, prchange, dirchange in zip(A, B, C):
         fair_value += dirchange * 0
     order = mk_order(fair_value, pv, k, exchange1, exchange2) 
 
-exchange1.display()
+exchange1.total_volume
+exchange2.total_volume
+Trade.number_of_trades
+
+exchange1.hist_std
+exchange2.spreads
+exchange2.hist_std
+
+
+
