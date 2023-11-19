@@ -1,4 +1,5 @@
-# uniWien_Python-for-Finance-1
+# uniWien_py.fin
+
 This is a repo for all my assignments for the Python 1 course, taught by Christian Westheide
 
 
@@ -15,3 +16,8 @@ This is a repo for all my assignments for the Python 1 course, taught by Christi
 
 
 REMEMBER: The name of the file that you upload should be named *Homework1_YourLastName_YourStudentID*.
+
+
+
+Links to OpenAi chats used for the project: 
+ * https://chat.openai.com/share/c067a83e-5968-45d7-b816-67111ac10c31
