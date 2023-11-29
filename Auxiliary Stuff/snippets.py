@@ -1,42 +1,49 @@
-tick = [0.01, 0.1, 1]
-q = [0,0.001, 0.01, 0.1]
-k = [0.1, 1]
-fair_value = 100
 
-rng = np.random.default_rng(1234)
 
-A = rng.standard_normal(100000)
-A1 = 0.1 * A
-B = rng.uniform(0, 1, 100000)
-C = rng.choice([-1,1], 100000)
+# Example usage with the parameters from the provided R script
+S0 = 100
+sigma = 0.2
+T = 1
+dt = 1/252
+r = 0.05
+n = 100000
 
-simulation_results = []
+def mc_euler(S0, sigma, T, dt, r, n_simulations):
+    """
+    Performs a Monte Carlo simulation to estimate the mean stock price at the final time step using the Euler method.
 
-for q in q:
-    for k in k:
-        exchange1 = OrderBook(tick[0])
-        exchange2 = OrderBook(tick[1])
-        fair_value = 100
-        
-        for pv, prchange, dirchange in zip(PrV0, B, C):
-            if prchange < q:
-                fair_value += dirchange
-            else:
-                fair_value += dirchange * 0
-            order = mk_order(fair_value, pv, k, exchange1, exchange2)
+    Parameters:
+    S0 (float): Initial stock price.
+    mu (float): Drift coefficient.
+    sigma (float): Volatility.
+    T (float): Time horizon in years.
+    dt (float): Time step.
+    r (float): Risk-free interest rate.
+    n_simulations (int): Number of simulated paths.
 
-        total_vol = exchange1.total_volume + exchange2.total_volume
+    Returns:
+    float: Mean stock price at the final time step from all simulations.
+    """
+    nsteps = int(T / dt)  # Number of steps
+    final_prices = np.zeros(n_simulations)  # Array to store the final price of each path
 
-        simulation_results.append({
-            'k': k,
-            'q': q,
-            'tick1': exchange1.tick_size,
-            'tick2':exchange2.tick_size,
-            'avg_spread1': exchange1.get_average_spread(),
-            'avg_spread2': exchange2.get_average_spread(),
-            'sigma_price_change1': exchange1.get_std_dp(),
-            'sigma_price_change2': exchange2.get_std_dp()
+    for sim in range(n_simulations):
+        dW = np.sqrt(dt) * np.random.normal(size=nsteps)  # Increments of the Wiener process
+        S_euler = np.zeros(nsteps)
+        S_euler[0] = S0
 
-        })
+        # Euler approximation for each path
+        for i in range(1, nsteps):
+            S_euler[i] = S_euler[i - 1] + r * S_euler[i - 1] * dt + sigma * S_euler[i - 1] * dW[i - 1]
 
-simulation_results
+        final_prices[sim] = S_euler[-1]
+
+    # Calculating the mean of the final prices
+    mean_final_price = np.mean(final_prices)
+
+    return mean_final_price
+
+# Testing the updated function with 10 simulations
+mean_final_price_test = mc_euler(S0, sigma, T, dt, r, n)
+mean_final_price_test
+
