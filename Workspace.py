@@ -92,7 +92,7 @@ class OrderBook(object):
                 ask_price = new_order.limit_price if new_order.side == 'sell' else order.limit_price
 
                 trade = Trade(new_order.ID if new_order.side == 'buy' else order.ID, order.ID if new_order.side =='buy' else new_order.ID, bid_price, ask_price, order.limit_price, 1)
-                print("Trade executed: ", trade)
+                #print("Trade executed: ", trade)
 
                 self.update_trade_metrics(trade)
 
@@ -220,22 +220,21 @@ def mk_order(fv, pv, k, exchange1, exchange2):
 
 
 #Set up for simulations
-tick1 = 0.01
-tick2 = 0.01
-exchange1 = OrderBook(tick1)
-exchange2 = OrderBook(tick2)
+tick = [0.01, 0.1, 1]
+Q = [0,0.001, 0.01, 0.1]
+K = [0.1, 1]
+fair_value = 100
 
 import numpy as np
 rng = np.random.default_rng(1234)
 
-A = rng.standard_normal(100)
-A1 = 0.1 * A
+PrV0 = rng.standard_normal(100)
+PrV1 = 0.1 * PrV0
+PrV = [PrV0, PrV1]
+
 B = rng.uniform(0, 1, 100)
 C = rng.choice([-1,1], 100)
 
-fair_value = 100
-k = .1
-q = 0.01
 
 
 
@@ -244,20 +243,62 @@ q = 0.01
 
 ### Different parameter choices
 
-for pv, prchange, dirchange in zip(A, B, C):
-    if prchange < q:
-        fair_value += dirchange
-    else:
-        fair_value += dirchange * 0
-    order = mk_order(fair_value, pv, k, exchange1, exchange2) 
+simulation_results = []
 
-exchange1.total_volume
-exchange2.total_volume
-Trade.number_of_trades
+for A in PrV:
+    for k in K:
+        for q in Q:
+        
+            exchange1 = OrderBook(tick[0])
+            exchange2 = OrderBook(tick[1])
+            fair_value = 100
 
-exchange1.hist_std
-exchange2.spreads
-exchange2.hist_std
+            for pv, prchange, dirchange in zip(A, B, C):
+                if prchange < q:
+                    fair_value += dirchange
+                else:
+                    fair_value += dirchange * 0
+                order = mk_order(fair_value, pv, k, exchange1, exchange2)
+
+            total_vol = exchange1.total_volume + exchange2.total_volume
+
+            simulation_results.append({
+                'k': k,
+                'q': q,
+                'tick1': exchange1.tick_size,
+                'tick2':exchange2.tick_size,
+                'avg_spread1': exchange1.get_average_spread(),
+                'avg_spread2': exchange2.get_average_spread(),
+                'sigma_price_change1': exchange1.get_std_dp(),
+                'sigma_price_change2': exchange2.get_std_dp(),
+                'PV': A
+            })
+
+simulation_results
+
+import pandas as pd
+
+# Convert the simulation results to a pandas DataFrame
+df = pd.DataFrame(simulation_results)
+
+# Save the DataFrame to a CSV file
+csv_file_path = 'data/simulation_results.csv' #what's the correct path here?
 
 
+df.to_csv(csv_file_path, index=False)
 
+# Display the path to the CSV file so it can be downloaded or accessed
+csv_file_path
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Assuming 'df' is the DataFrame containing the simulation results
+sns.lineplot(data=df, x='k', y='avg_spread1', hue='q', marker='o')
+plt.title('Average Bid-Ask Spread for Each k Value')
+plt.xlabel('k Value')
+plt.ylabel('Average Bid-Ask Spread')
+plt.legend(title='q Value')
+plt.show()
+
+head(df)
