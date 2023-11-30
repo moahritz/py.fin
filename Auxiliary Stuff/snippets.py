@@ -1,48 +1,51 @@
+import numpy as np
+
+def mean_monte_carlo_simulation(S0, sigma, T, dt, r, n_simulations):
+    """
+    Performs a Monte Carlo simulation to estimate the mean stock price path using the Euler discretization method.
+
+    Parameters:
+    S0 (float): Initial stock price.
+    sigma (float): Volatility.
+    T (float): Time horizon in years.
+    dt (float): Time step.
+    r (float): Risk-free interest rate.
+    n_simulations (int): Number of simulated paths.
+
+    Returns:
+    numpy.ndarray: Mean stock price path from all simulations.
+    numpy.ndarray: Individual stock price path for comparison.
+    """
+    nsteps = int(T / dt)  # Number of steps
+    all_paths = np.zeros((n_simulations, nsteps))  # Array to store all paths
+
+    for sim in range(n_simulations):
+        dW = np.sqrt(dt) * np.random.normal(size=nsteps)  # Increments of the Wiener process
+        S_euler = np.zeros(nsteps)
+        S_euler[0] = S0
+
+        # Euler approximation for each path
+        for i in range(1, nsteps):
+            S_euler[i] = S_euler[i - 1] + r * S_euler[i - 1] * dt + sigma * S_euler[i - 1] * dW[i - 1]
+
+        all_paths[sim, :] = S_euler
+
+    # Calculating the mean path
+    mean_path = np.mean(all_paths, axis=0)
+
+    return mean_path, all_paths
 
 
-def euro_Csim(r, v, S0, K, T, NSim):
-    '''
-    r: risk-free rate
-    v: volatility
-    S0: initial price
-    K: strike price
-    time: unit of time for simulation
-    T: time to maturity (in days)
-    NSim: number of simulations
-    '''
 
 
-    # Convert T to years -> 252 trading days per year
-    T_y = T / 252
-
-    S = []
-    W = np.random.standard_normal(NSim)
-    S = S0 * np.exp((r - 0.5 * v**2) * T_y + v * W * np.sqrt(T_y))
-
-    disc_Pay_Call = np.exp(-r * T_y) * np.maximum(S - K, 0)
-    mPay_Call = np.mean(disc_Pay_Call)
-
-    return mPay_Call
+dt = 1 / 252  # Time step
+T = 1  # Time horizon
+S0 = 100  # Initial stock price
 
 
-test = euro_Csim(0.05, 0.2, 100, 100, 150, 10000)
-test = [euro_Csim(0.05, 0.2, 90, 100, 150, NSim) for NSim in range(1000,1000001, 1000)]
-len(test)
-range(1,199)
+v = 0.2  # Volatility
+r = 0.05  # Risk-free interest rate
 
-def black_scholes_closed_form(S0, K, t, r, sigma):
-    T  = t / 252
-    d1 = (np.log(S / K) + (r + sigma**2 / 2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
-    call_price = S0 * stats.norm.cdf(d1) - K * np.exp(-r * T) * stats.norm.cdf(d2)
-    put_price = K * np.exp(-r * T) * stats.norm.cdf(-d2) - S * stats.norm.cdf(-d1)
-    return call_price, put_price
-
-black_scholes_closed_form(90, 100, 150, 0.05, 0.2)
-
-test
-
-d1 = (np.log(90/100) + (0.05 + 0.5 * 0.2**2) * 150/252) / ( 0.2 * np.sqrt(150/252))
-d2 = d1 - 0.2 * np.sqrt(150/252)
-C = 90 * stats.norm.cdf(d1) - 100 * np.exp(-0.05 * 150/252) * stats.norm.cdf(d2)
-C
+W_T = np.random.standard_normal(int(T/dt))
+S_T = S0 * np.exp((r - 0.5 * v ** 2) * T + v * np.sqrt(T) * W_T)
+mcA = np.exp(-r * t) * np.max(np.mean(S_T) - K, 0)
