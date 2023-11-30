@@ -1,49 +1,48 @@
 
 
-# Example usage with the parameters from the provided R script
-S0 = 100
-sigma = 0.2
-T = 1
-dt = 1/252
-r = 0.05
-n = 100000
+def euro_Csim(r, v, S0, K, T, NSim):
+    '''
+    r: risk-free rate
+    v: volatility
+    S0: initial price
+    K: strike price
+    time: unit of time for simulation
+    T: time to maturity (in days)
+    NSim: number of simulations
+    '''
 
-def mc_euler(S0, sigma, T, dt, r, n_simulations):
-    """
-    Performs a Monte Carlo simulation to estimate the mean stock price at the final time step using the Euler method.
 
-    Parameters:
-    S0 (float): Initial stock price.
-    mu (float): Drift coefficient.
-    sigma (float): Volatility.
-    T (float): Time horizon in years.
-    dt (float): Time step.
-    r (float): Risk-free interest rate.
-    n_simulations (int): Number of simulated paths.
+    # Convert T to years -> 252 trading days per year
+    T_y = T / 252
 
-    Returns:
-    float: Mean stock price at the final time step from all simulations.
-    """
-    nsteps = int(T / dt)  # Number of steps
-    final_prices = np.zeros(n_simulations)  # Array to store the final price of each path
+    S = []
+    W = np.random.standard_normal(NSim)
+    S = S0 * np.exp((r - 0.5 * v**2) * T_y + v * W * np.sqrt(T_y))
 
-    for sim in range(n_simulations):
-        dW = np.sqrt(dt) * np.random.normal(size=nsteps)  # Increments of the Wiener process
-        S_euler = np.zeros(nsteps)
-        S_euler[0] = S0
+    disc_Pay_Call = np.exp(-r * T_y) * np.maximum(S - K, 0)
+    mPay_Call = np.mean(disc_Pay_Call)
 
-        # Euler approximation for each path
-        for i in range(1, nsteps):
-            S_euler[i] = S_euler[i - 1] + r * S_euler[i - 1] * dt + sigma * S_euler[i - 1] * dW[i - 1]
+    return mPay_Call
 
-        final_prices[sim] = S_euler[-1]
 
-    # Calculating the mean of the final prices
-    mean_final_price = np.mean(final_prices)
+test = euro_Csim(0.05, 0.2, 100, 100, 150, 10000)
+test = [euro_Csim(0.05, 0.2, 90, 100, 150, NSim) for NSim in range(1000,1000001, 1000)]
+len(test)
+range(1,199)
 
-    return mean_final_price
+def black_scholes_closed_form(S0, K, t, r, sigma):
+    T  = t / 252
+    d1 = (np.log(S / K) + (r + sigma**2 / 2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    call_price = S0 * stats.norm.cdf(d1) - K * np.exp(-r * T) * stats.norm.cdf(d2)
+    put_price = K * np.exp(-r * T) * stats.norm.cdf(-d2) - S * stats.norm.cdf(-d1)
+    return call_price, put_price
 
-# Testing the updated function with 10 simulations
-mean_final_price_test = mc_euler(S0, sigma, T, dt, r, n)
-mean_final_price_test
+black_scholes_closed_form(90, 100, 150, 0.05, 0.2)
 
+test
+
+d1 = (np.log(90/100) + (0.05 + 0.5 * 0.2**2) * 150/252) / ( 0.2 * np.sqrt(150/252))
+d2 = d1 - 0.2 * np.sqrt(150/252)
+C = 90 * stats.norm.cdf(d1) - 100 * np.exp(-0.05 * 150/252) * stats.norm.cdf(d2)
+C
